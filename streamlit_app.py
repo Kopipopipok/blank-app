@@ -1,63 +1,18 @@
-# app.py
 import streamlit as st
-from PIL import Image, ImageEnhance
-import pytesseract
-import numpy as np
-import cv2
-from collections import Counter
 
-st.set_page_config(page_title="Analisa Gambar Sosmed", layout="centered")
+st.title("📊 Instagram Engagement Rate Analyzer")
 
-st.title("📊 Analisa Gambar untuk Postingan Sosial Media")
+st.markdown("Masukkan data dari 1 postingan Instagram")
 
-uploaded_file = st.file_uploader("Unggah gambar postingan (JPEG/PNG)", type=["jpg", "jpeg", "png"])
+likes = st.number_input("❤️ Jumlah Like", min_value=0)
+comments = st.number_input("💬 Jumlah Komentar", min_value=0)
+followers = st.number_input("👥 Jumlah Follower Akun", min_value=1)
 
-def get_dominant_color(img, k=4):
-    img = img.resize((100, 100))
-    arr = np.array(img)
-    arr = arr.reshape((-1, 3))
-    arr = arr[np.random.choice(arr.shape[0], 1000, replace=True)]
-    colors, _ = np.unique(arr, axis=0, return_counts=True)
-    return colors[0]
+if st.button("Hitung Engagement Rate"):
+    like_rate = (likes / followers) * 100
+    comment_rate = (comments / followers) * 100
+    engagement_rate = ((likes + comments) / followers) * 100
 
-def get_contrast_score(img):
-    gray = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)
-    contrast = gray.std()
-    return contrast
-
-def extract_text(img):
-    text = pytesseract.image_to_string(img)
-    return text
-
-def check_cta(text):
-    cta_keywords = ["beli", "klik", "scan", "pesan", "hubungi", "diskon", "gratis"]
-    found = [word for word in cta_keywords if word in text.lower()]
-    return found
-
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Gambar yang diunggah", use_column_width=True)
-
-    with st.spinner("🔍 Menganalisis gambar..."):
-        # Analisis visual
-        dominant_color = get_dominant_color(image)
-        contrast = get_contrast_score(image)
-        text_content = extract_text(image)
-        cta_found = check_cta(text_content)
-
-        st.subheader("📋 Hasil Analisis")
-        st.markdown(f"**Kontras Gambar**: {contrast:.2f} → {'✅ Baik' if contrast > 40 else '⚠️ Rendah'}")
-        st.markdown(f"**Teks Terdeteksi**: {text_content[:100]}{'...' if len(text_content) > 100 else ''}")
-        st.markdown(f"**CTA Ditemukan**: {', '.join(cta_found) if cta_found else '❌ Tidak ditemukan'}")
-        st.markdown(f"**Warna Dominan**: RGB {tuple(dominant_color)}")
-
-        # Rekomendasi sederhana
-        st.subheader("🧠 Rekomendasi")
-        if contrast < 40:
-            st.warning("Tingkat kontras rendah. Pertimbangkan untuk meningkatkan keterbacaan teks.")
-        if not cta_found:
-            st.info("Tidak ditemukan CTA. Tambahkan ajakan seperti 'Klik Sekarang', 'Beli', atau 'Scan'.")
-        else:
-            st.success("CTA ditemukan. Bagus!")
-
-        st.caption("Versi awal — analisis lanjutan (seperti prediksi like/share) bisa ditambahkan kemudian.")
+    st.metric("📈 Like Rate (%)", f"{like_rate:.2f}%")
+    st.metric("💬 Comment Rate (%)", f"{comment_rate:.2f}%")
+    st.metric("🔥 Engagement Rate Total (%)", f"{engagement_rate:.2f}%")
